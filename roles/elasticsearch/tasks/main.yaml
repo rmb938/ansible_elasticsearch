@@ -1,0 +1,191 @@
+---
+- name: Install Elastic keyring
+  ansible.builtin.get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /usr/share/keyrings/elasticsearch-keyring.asc
+    checksum: sha256:db52809c5f6b27f9c2bed45cb43e398c659275f3d35305653c6750a0db90f5eb
+    mode: "0644"
+
+- name: Add Elastic repo
+  ansible.builtin.apt_repository:
+    repo: >
+      deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.asc]
+      https://artifacts.elastic.co/packages/8.x/apt stable main
+    state: present
+
+- name: Install Elasticsearch
+  ansible.builtin.package:
+    name: elasticsearch
+    state: present
+  register: install_elasticsearch
+
+- name: Chown elasticsearch datadir
+  ansible.builtin.file:
+    path: /var/lib/elasticsearch
+    owner: elasticsearch
+    group: elasticsearch
+
+- name: Create service_tokens files
+  ansible.builtin.file:
+    path: /etc/elasticsearch/service_tokens
+    owner: root
+    group: elasticsearch
+    mode: "0640"
+    state: file
+
+- name: Reload systemd # noqa: no-handler
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: install_elasticsearch.changed
+
+- name: Configure Elastic
+  ansible.builtin.template:
+    src: etc/elasticsearch/elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+    mode: "0660"
+  register: elastic_config
+
+- name: Start Elasticsearch
+  ansible.builtin.systemd:
+    service: elasticsearch
+    state: started
+    enabled: true
+
+- name: Restart elastic if config changed # noqa: no-handler
+  ansible.builtin.systemd:
+    name: elasticsearch
+    state: restarted
+  when: elastic_config.changed
+
+- name: Tailscale Proxy Elastic
+  ansible.builtin.command:
+    cmd: "/usr/bin/tailscale serve --bg --https=9200 https+insecure://127.0.0.1:9200"
+  changed_when: false
+
+- name: Check if Elastic Password Exists
+  ansible.builtin.stat:
+    path: /etc/elasticsearch/elastic_password
+  register: elastic_password_file
+
+- name: Create Elastic Password
+  when: not elastic_password_file.stat.exists
+  block:
+    - name: Generate Elastic user password
+      ansible.builtin.command:
+        cmd: "/usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -s -b"
+      register: elastic_user_password_create
+      changed_when: false
+
+    - name: Save Elastic Password to File
+      ansible.builtin.copy:
+        dest: /etc/elasticsearch/elastic_password
+        content: "{{ elastic_user_password_create.stdout | trim }}"
+        owner: root
+        group: elasticsearch
+        mode: "0640"
+
+- name: Read Elastic Password
+  ansible.builtin.slurp:
+    src: /etc/elasticsearch/elastic_password
+  register: elastic_password
+
+- name: Create fluent-bit ILM
+  ansible.builtin.uri:
+    url: "https://{{ inventory_hostname }}:9200/_ilm/policy/fluent-bit-logs"
+    user: elastic
+    password: "{{ elastic_password.content | b64decode }}"
+    method: PUT
+    body: >
+      {
+        "policy": {
+          "phases": {
+            "hot": {
+              "min_age": "0ms",
+              "actions": {
+                "set_priority": {
+                  "priority": 100
+                },
+                "rollover": {
+                  "max_age": "30d",
+                  "max_primary_shard_size": "50gb"
+                }
+              }
+            },
+            "delete": {
+              "min_age": "365d",
+              "actions": {
+                "delete": {
+                  "delete_searchable_snapshot": true
+                }
+              }
+            }
+          }
+        }
+      }
+    force_basic_auth: true
+    status_code: 200
+    body_format: json
+
+- name: Create fluent-bit template
+  ansible.builtin.uri:
+    url: "https://{{ inventory_hostname }}:9200/_index_template/fluent-bit-logs"
+    user: elastic
+    password: "{{ elastic_password.content | b64decode }}"
+    method: POST
+    body: >
+      {
+        "priority": 200,
+        "template": {
+          "settings": {
+            "index": {
+              "lifecycle": {
+                "name": "fluent-bit-logs",
+                "rollover_alias": "fluent-bit-logs"
+              },
+              "number_of_shards": 1,
+              "number_of_replicas": 0
+            }
+          }
+        },
+        "index_patterns": [
+          "fluent-bit-logs"
+        ],
+        "data_stream": {}
+      }
+    force_basic_auth: true
+    status_code: 200
+    body_format: json
+
+- name: Create fluent-bit role
+  ansible.builtin.uri:
+    url: "https://{{ inventory_hostname }}:9200/_security/role/fluent-bit"
+    user: elastic
+    password: "{{ elastic_password.content | b64decode }}"
+    method: POST
+    body: >
+      {
+        "indices": [
+          {
+            "names": "fluent-bit-logs",
+            "privileges": ["auto_configure", "create_doc"]
+          }
+        ]
+      }
+    force_basic_auth: true
+    status_code: 200
+    body_format: json
+
+- name: Create fluent-bit user
+  ansible.builtin.uri:
+    url: "https://{{ inventory_hostname }}:9200/_security/user/fluent-bit"
+    user: elastic
+    password: "{{ elastic_password.content | b64decode }}"
+    method: POST
+    body: >
+      {
+        "password": "fluent-bit",
+        "roles": ["fluent-bit"]
+      }
+    force_basic_auth: true
+    status_code: 200
+    body_format: json

@@ -1,0 +1,92 @@
+---
+- name: Install Kibana
+  ansible.builtin.package:
+    name: kibana
+    state: present
+  register: install_kibana
+
+- name: Configure Kibana Node Options
+  ansible.builtin.template:
+    src: etc/kibana/node.options
+    dest: /etc/kibana/node.options
+    mode: "0664"
+  register: kibana_node_options_config
+
+- name: Reload systemd # noqa: no-handler
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: install_kibana.changed
+
+- name: Check if Kibana Service Account Exists
+  ansible.builtin.stat:
+    path: /etc/kibana/service_account_token
+  register: kibana_service_account_token_file
+
+- name: Create Kibana Service Account
+  when: not kibana_service_account_token_file.stat.exists
+  block:
+    - name: Create Kibana SA Token
+      ansible.builtin.command:
+        cmd: "/usr/share/elasticsearch/bin/elasticsearch-service-tokens create elastic/kibana ansible"
+      register: kibana_service_account_token_create
+      changed_when: false
+
+    - name: Save Service Account to File
+      ansible.builtin.copy:
+        dest: /etc/kibana/service_account_token
+        content: "{{ kibana_service_account_token_create.stdout.split('=')[1] | trim }}"
+        owner: root
+        group: kibana
+        mode: "0640"
+
+- name: Read Kibana Service Account
+  ansible.builtin.slurp:
+    src: /etc/kibana/service_account_token
+  register: kibana_service_account_token
+
+- name: Make Kibana certs dir
+  ansible.builtin.file:
+    path: /etc/kibana/certs
+    owner: root
+    group: kibana
+    mode: "0770"
+    state: directory
+
+- name: Copy Elastic HTTP CA
+  ansible.builtin.copy:
+    remote_src: true
+    src: /etc/elasticsearch/certs/http_ca.crt
+    dest: /etc/kibana/certs/http_ca.crt
+    owner: root
+    group: kibana
+    mode: "0660"
+
+- name: Configure Kibana
+  ansible.builtin.template:
+    src: etc/kibana/kibana.yml
+    dest: /etc/kibana/kibana.yml
+    mode: "0660"
+  register: kibana_config
+
+- name: Start Kibana
+  ansible.builtin.systemd:
+    service: kibana
+    state: started
+    enabled: true
+
+- name: Restart kibana if config changed # noqa: no-handler
+  ansible.builtin.systemd:
+    name: kibana
+    state: restarted
+  when: kibana_node_options_config.changed or kibana_config.changed
+
+- name: Tailscale Proxy Kibana
+  ansible.builtin.command:
+    cmd: "/usr/bin/tailscale serve --bg http://127.0.0.1:5601"
+  changed_when: false
+
+# TODO: kibaka only listens on localhost by default, let's explictly configure it
+# TODO: configure tailscale serve to serv kibana
+# TODO: configure kibana server.publicBaseUrl to be tailscale url
+# TODO: generate enrollment token `/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana`
+# TODO: enroll kibana /usr/share/kibana/bin/kibana-setup -t <token>

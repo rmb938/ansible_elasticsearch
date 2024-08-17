@@ -1,0 +1,23 @@
+- name: Bootstrap
+  hosts: all
+  become: true
+  vars:
+    fluentbit_additional_inputs:
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch.log
+        Path_key: file_name
+        Tag: system.elasticsearch
+        # Parser: syslog-rfc3164-local-custom TODO: this
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-state.db
+        DB.Sync: Normal
+  roles:
+    - rmb938.bootstrap
+
+- name: Elasticsearch
+  hosts: all
+  become: true
+  roles:
+    - elasticsearch
+    - kibana
