@@ -12,6 +12,51 @@
         Skip_Long_Lines: "On"
         DB: /var/lib/fluent-bit/tail-elasticsearch-state.db
         DB.Sync: Normal
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch_audit.json
+        Path_key: file_name
+        Tag: system.elasticsearch_audit
+        Parser: json
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-audit-state.db
+        DB.Sync: Normal
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch_deprecation.json
+        Path_key: file_name
+        Tag: system.elasticsearch_deprecation
+        Parser: json
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-deprecation-state.db
+        DB.Sync: Normal
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch_index_indexing_slowlog.json
+        Path_key: file_name
+        Tag: system.elasticsearch_index_indexing_slowlog
+        Parser: json
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-indexing-slowlog-state.db
+        DB.Sync: Normal
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch_index_search_slowlog.json
+        Path_key: file_name
+        Tag: system.elasticsearch_index_search_slowlog
+        Parser: json
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-search-slowlog-state.db
+        DB.Sync: Normal
+      - Name: Tail
+        Path: /var/log/elasticsearch/elasticsearch_server.json
+        Path_key: file_name
+        Tag: system.elasticsearch_server
+        Parser: json
+        Mem_Buf_Limit: 5MB
+        Skip_Long_Lines: "On"
+        DB: /var/lib/fluent-bit/tail-elasticsearch-server-state.db
+        DB.Sync: Normal
   roles:
     - rmb938.bootstrap
 

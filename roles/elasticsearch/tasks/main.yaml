@@ -31,12 +31,19 @@
     owner: root
     group: elasticsearch
     mode: "0640"
-    state: file
+    state: touch
 
 - name: Reload systemd # noqa: no-handler
   ansible.builtin.systemd:
     daemon_reload: true
   when: install_elasticsearch.changed
+
+- name: Configure Elastic Defaults
+  ansible.builtin.template:
+    src: etc/default/elasticsearch
+    dest: /etc/default/elasticsearch
+    mode: "0660"
+  register: elastic_default
 
 - name: Configure Elastic
   ansible.builtin.template:
@@ -51,11 +58,11 @@
     state: started
     enabled: true
 
-- name: Restart elastic if config changed # noqa: no-handler
+- name: Restart elastic if config or default changed # noqa: no-handler
   ansible.builtin.systemd:
     name: elasticsearch
     state: restarted
-  when: elastic_config.changed
+  when: elastic_config.changed or elastic_default.changed
 
 - name: Tailscale Proxy Elastic
   ansible.builtin.command:
