@@ -12,11 +12,6 @@
     mode: "0664"
   register: kibana_node_options_config
 
-- name: Reload systemd # noqa: no-handler
-  ansible.builtin.systemd:
-    daemon_reload: true
-  when: install_kibana.changed
-
 - name: Check if Kibana Service Account Exists
   ansible.builtin.stat:
     path: /etc/kibana/service_account_token

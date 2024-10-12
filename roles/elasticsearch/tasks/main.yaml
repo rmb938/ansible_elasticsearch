@@ -26,17 +26,13 @@
     group: elasticsearch
 
 - name: Create service_tokens files
-  ansible.builtin.file:
-    path: /etc/elasticsearch/service_tokens
+  ansible.builtin.copy:
+    content: ""
+    dest: /etc/elasticsearch/service_tokens
+    force: false
     owner: root
     group: elasticsearch
     mode: "0640"
-    state: touch
-
-- name: Reload systemd # noqa: no-handler
-  ansible.builtin.systemd:
-    daemon_reload: true
-  when: install_elasticsearch.changed
 
 - name: Configure Elastic Defaults
   ansible.builtin.template:
