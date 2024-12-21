@@ -6,7 +6,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch.log
         Path_key: file_name
-        Tag: system.elasticsearch
+        Tag: system.file.elasticsearch
         # Parser: syslog-rfc3164-local-custom TODO: this
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
@@ -15,7 +15,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch_audit.json
         Path_key: file_name
-        Tag: system.elasticsearch_audit
+        Tag: system.file.elasticsearch_audit
         Parser: json
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
@@ -24,7 +24,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch_deprecation.json
         Path_key: file_name
-        Tag: system.elasticsearch_deprecation
+        Tag: system.file.elasticsearch_deprecation
         Parser: json
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
@@ -33,7 +33,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch_index_indexing_slowlog.json
         Path_key: file_name
-        Tag: system.elasticsearch_index_indexing_slowlog
+        Tag: system.file.elasticsearch_index_indexing_slowlog
         Parser: json
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
@@ -42,7 +42,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch_index_search_slowlog.json
         Path_key: file_name
-        Tag: system.elasticsearch_index_search_slowlog
+        Tag: system.file.elasticsearch_index_search_slowlog
         Parser: json
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
@@ -51,7 +51,7 @@
       - Name: Tail
         Path: /var/log/elasticsearch/elasticsearch_server.json
         Path_key: file_name
-        Tag: system.elasticsearch_server
+        Tag: system.file.elasticsearch_server
         Parser: json
         Mem_Buf_Limit: 5MB
         Skip_Long_Lines: "On"
