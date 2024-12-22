@@ -48,6 +48,14 @@
     mode: "0660"
   register: elastic_config
 
+- name: Fix log dir permissions
+  ansible.builtin.file:
+    path: /var/log/elasticsearch
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: "0775"
+
 - name: Start Elasticsearch
   ansible.builtin.systemd:
     service: elasticsearch

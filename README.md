@@ -7,3 +7,9 @@ Ansible to Install [Elasticsearch](https://www.elastic.co/elasticsearch) on Ubun
     ```bash
     sudo tailscale up --ssh --advertise-tags "tag:servers,tag:elasticsearch"
     ```
+
+## Run
+
+```bash
+ansible-playbook -i hosts site.yaml -v --diff
+```
