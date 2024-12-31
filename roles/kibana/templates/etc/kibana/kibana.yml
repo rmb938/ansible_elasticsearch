@@ -41,7 +41,7 @@ server.publicBaseUrl: "https://{{ inventory_hostname }}"
 
 # =================== System: Elasticsearch ===================
 # The URLs of the Elasticsearch instances to use for all your queries.
-elasticsearch.hosts: ["https://127.0.0.1:9200"]
+elasticsearch.hosts: ["https://{{ ansible_fqdn }}:9200"]
 # If your Elasticsearch is protected with basic authentication, these settings provide
 # the username and password that the Kibana server uses to perform maintenance on the Kibana
 # index at startup. Your Kibana users still need to authenticate with Elasticsearch, which
@@ -88,7 +88,8 @@ elasticsearch.serviceAccountToken: "{{ kibana_service_account_token.content | b6
 
 # Enables you to specify a path to the PEM file for the certificate
 # authority for your Elasticsearch instance.
-elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/http_ca.crt"]
+elasticsearch.ssl.certificateAuthorities:
+  - "/usr/local/share/ca-certificates/smallstep.crt"
 # To disregard the validity of SSL certificates, change this setting's value to 'none'.
 #elasticsearch.ssl.verificationMode: full
 

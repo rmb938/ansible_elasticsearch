@@ -56,6 +56,43 @@
     group: elasticsearch
     mode: "0775"
 
+- name: Create Elastic Certificates
+  ansible.builtin.command: "step ca certificate {{ ansible_fqdn }} /etc/ssl/private/step-ca/elasticsearch-http.crt /etc/ssl/private/step-ca/elasticsearch-http.crt.key" # noqa: yaml[line-length]
+  args:
+    creates: "/etc/ssl/private/step-ca/elasticsearch-http.crt"
+  environment:
+    STEPPATH: "/etc/step"
+
+- name: Copy Elastic Certificates
+  ansible.builtin.copy:
+    remote_src: true
+    src: /etc/ssl/private/step-ca/elasticsearch-http.{{ item }}
+    dest: /etc/elasticsearch/certs/elasticsearch-http.{{ item }}
+    owner: root
+    group: elasticsearch
+    mode: "0660"
+  with_items:
+    - "crt"
+    - "crt.key"
+
+- name: Create step certs systemd override folder
+  ansible.builtin.file:
+    path: /etc/systemd/system/step-cert-renewer.service.d/
+    state: directory
+    mode: "0755"
+
+- name: Step cert renewer systemd Override
+  ansible.builtin.template:
+    src: etc/systemd/system/step-cert-renewer.service.d/override.conf
+    dest: /etc/systemd/system/step-cert-renewer.service.d/override.conf
+    mode: "0644"
+  register: cert_renewer_systemd_override
+
+- name: Reload cert renewer systemd # noqa: no-handler
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: cert_renewer_systemd_override.changed
+
 - name: Start Elasticsearch
   ansible.builtin.systemd:
     service: elasticsearch
@@ -67,11 +104,6 @@
     name: elasticsearch
     state: restarted
   when: elastic_config.changed or elastic_default.changed
-
-- name: Tailscale Proxy Elastic
-  ansible.builtin.command:
-    cmd: "/usr/bin/tailscale serve --bg --https=9200 https+insecure://127.0.0.1:9200"
-  changed_when: false
 
 - name: Check if Elastic Password Exists
   ansible.builtin.stat:
@@ -102,7 +134,7 @@
 
 - name: Create fluent-bit ILM
   ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:9200/_ilm/policy/fluent-bit-logs"
+    url: "https://{{ ansible_fqdn }}:9200/_ilm/policy/fluent-bit-logs"
     user: elastic
     password: "{{ elastic_password.content | b64decode }}"
     method: PUT
@@ -139,7 +171,7 @@
 
 - name: Create fluent-bit template
   ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:9200/_index_template/fluent-bit-logs"
+    url: "https://{{ ansible_fqdn }}:9200/_index_template/fluent-bit-logs"
     user: elastic
     password: "{{ elastic_password.content | b64decode }}"
     method: POST
@@ -169,7 +201,7 @@
 
 - name: Create fluent-bit role
   ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:9200/_security/role/fluent-bit"
+    url: "https://{{ ansible_fqdn }}:9200/_security/role/fluent-bit"
     user: elastic
     password: "{{ elastic_password.content | b64decode }}"
     method: POST
@@ -188,7 +220,7 @@
 
 - name: Create fluent-bit user
   ansible.builtin.uri:
-    url: "https://{{ inventory_hostname }}:9200/_security/user/fluent-bit"
+    url: "https://{{ ansible_fqdn }}:9200/_security/user/fluent-bit"
     user: elastic
     password: "{{ elastic_password.content | b64decode }}"
     method: POST

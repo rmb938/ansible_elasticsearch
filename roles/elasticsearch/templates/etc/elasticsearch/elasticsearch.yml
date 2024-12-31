@@ -91,7 +91,8 @@ xpack.security.enrollment.enabled: true
 # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
 xpack.security.http.ssl:
   enabled: true
-  keystore.path: certs/http.p12
+  key: certs/elasticsearch-http.crt.key
+  certificate: certs/elasticsearch-http.crt
 
 # Enable encryption and mutual authentication between cluster nodes
 xpack.security.transport.ssl:
@@ -101,15 +102,16 @@ xpack.security.transport.ssl:
   truststore.path: certs/transport.p12
 # Create a new cluster with the current node only
 # Additional nodes can still join the cluster later
-cluster.initial_master_nodes: ["{{ inventory_hostname }}"]
+cluster.initial_master_nodes: ["{{ ansible_fqdn }}"]
 
 # Allow HTTP API connections from anywhere
 # Connections are encrypted and require user authentication
 #http.host: 0.0.0.0
-http.bind_host: "127.0.0.1" # bind on localhost, we will export via tailscale serve
-http.publish_host: "127.0.0.1"
+http.bind_host: "0.0.0.0"
+http.publish_host: "_eth0_"
 # Allow other nodes to join the cluster from anywhere
 # Connections are encrypted and mutually authenticated
-transport.host: 127.0.0.1 # localhost for now, we aren't planning on adding any other nodes
+transport.bind_host: 127.0.0.1 # localhost for now, we aren't planning on adding any other nodes
+transport.publish_host: 127.0.0.1 # localhost for now, we aren't planning on adding any other nodes
 
 action.auto_create_index: .monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,.apm*,.async-search,.internal*,.kibana*,.security*,.slo*
