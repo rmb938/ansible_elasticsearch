@@ -22,7 +22,7 @@
 #
 # Use a descriptive name for the node:
 #
-node.name: "{{ inventory_hostname }}"
+node.name: "{{ ansible_fqdn }}"
 #
 # Add custom attributes to the node:
 #
@@ -106,9 +106,8 @@ cluster.initial_master_nodes: ["{{ ansible_fqdn }}"]
 
 # Allow HTTP API connections from anywhere
 # Connections are encrypted and require user authentication
-#http.host: 0.0.0.0
 http.bind_host: "0.0.0.0"
-http.publish_host: "_eth0_"
+http.publish_host: "{{ ansible_fqdn }}"
 # Allow other nodes to join the cluster from anywhere
 # Connections are encrypted and mutually authenticated
 transport.bind_host: 127.0.0.1 # localhost for now, we aren't planning on adding any other nodes

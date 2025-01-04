@@ -3,7 +3,6 @@
   ansible.builtin.package:
     name: kibana
     state: present
-  register: install_kibana
 
 - name: Configure Kibana Node Options
   ansible.builtin.template:
@@ -80,8 +79,4 @@
     cmd: "/usr/bin/tailscale serve --bg http://127.0.0.1:5601"
   changed_when: false
 
-# TODO: kibaka only listens on localhost by default, let's explictly configure it
-# TODO: configure tailscale serve to serv kibana
-# TODO: configure kibana server.publicBaseUrl to be tailscale url
-# TODO: generate enrollment token `/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana`
 # TODO: enroll kibana /usr/share/kibana/bin/kibana-setup -t <token>
