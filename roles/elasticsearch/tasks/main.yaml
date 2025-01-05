@@ -62,7 +62,7 @@
 
 - name: Bootstrap step cli
   ansible.builtin.command: >-
-    step ca bootstrap --ca-url https://step-ca-ra.rmb938.me \
+    step ca bootstrap --ca-url https://step-ca-ra.us-homelab1.hl.rmb938.me \
       --fingerprint eb136a5118931a2306964469705323521dda8c43d26ec67e1c5508eb123f9c70
   args:
     creates: /etc/step/config/defaults.json
