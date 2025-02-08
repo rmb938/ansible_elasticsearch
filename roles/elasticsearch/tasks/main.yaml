@@ -60,22 +60,15 @@
     name: elasticsearch
     state: present
 
-- name: Bootstrap step cli
-  ansible.builtin.command: >-
-    step ca bootstrap --ca-url https://step-ca-ra.us-homelab1.hl.rmb938.me \
-      --fingerprint eb136a5118931a2306964469705323521dda8c43d26ec67e1c5508eb123f9c70
-  args:
-    creates: /etc/step/config/defaults.json
-  environment:
-    STEPPATH: /etc/step
-
 - name: Create Elastic Certificates
   ansible.builtin.command: >-
-    step ca certificate {{ ansible_fqdn }} /etc/elasticsearch/certs/elasticsearch-http.crt /etc/elasticsearch/certs/elasticsearch-http.crt.key
+    step ca certificate {{ ansible_fqdn }}
+    /etc/elasticsearch/certs/elasticsearch-http.crt
+    /etc/elasticsearch/certs/elasticsearch-http.crt.key
+    --ca-url https://step-ca.us-homelab1.hl.rmb938.me:8443
+    --root /usr/local/share/ca-certificates/smallstep-homelab-prod.crt
   args:
     creates: "/etc/elasticsearch/certs/elasticsearch-http.crt"
-  environment:
-    STEPPATH: "/etc/step"
 
 - name: Own elastic certificates
   ansible.builtin.file:
@@ -93,8 +86,11 @@
     special_time: "hourly"
     # We don't need to reload/restart elasticsearch as it will reload the certs on it's own
     job: >-
-      STEPPATH=/etc/step step ca renew /etc/elasticsearch/certs/elasticsearch-http.crt
-      /etc/elasticsearch/certs/elasticsearch-http.crt.key --force --mtls=false --expires-in 720h
+      step ca renew /etc/elasticsearch/certs/elasticsearch-http.crt
+      /etc/elasticsearch/certs/elasticsearch-http.crt.key
+      --ca-url https://step-ca.us-homelab1.hl.rmb938.me:8443
+      --root /usr/local/share/ca-certificates/smallstep-homelab-prod.crt
+      --force --mtls=false --expires-in 720h
     state: present
 
 - name: Chown elasticsearch datadir
