@@ -86,7 +86,7 @@
     special_time: "hourly"
     # We don't need to reload/restart elasticsearch as it will reload the certs on it's own
     job: >-
-      step ca renew /etc/elasticsearch/certs/elasticsearch-http.crt
+      step ca rekey /etc/elasticsearch/certs/elasticsearch-http.crt
       /etc/elasticsearch/certs/elasticsearch-http.crt.key
       --ca-url https://step-ca.us-homelab1.hl.rmb938.me:8443
       --root /usr/local/share/ca-certificates/smallstep-homelab-prod.crt
