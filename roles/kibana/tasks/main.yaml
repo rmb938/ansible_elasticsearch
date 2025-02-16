@@ -46,6 +46,41 @@
     mode: "0770"
     state: directory
 
+- name: Create Kibana Certificates
+  ansible.builtin.command: >-
+    step ca certificate {{ ansible_fqdn }}
+    /etc/kibana/certs/kibana-http.crt
+    /etc/kibana/certs/kibana-http.crt.key
+    --ca-url https://step-ca.us-homelab1.hl.rmb938.me:8443
+    --root /usr/local/share/ca-certificates/smallstep-homelab-prod.crt
+  args:
+    creates: "/etc/kibana/certs/kibana-http.crt"
+
+- name: Own Kibana certificates
+  ansible.builtin.file:
+    path: /etc/kibana/certs/{{ item }}
+    owner: kibana
+    group: kibana
+    mode: "0600"
+  with_items:
+    - kibana-http.crt
+    - kibana-http.crt.key
+
+- name: Cron to renew Kibana certificates
+  ansible.builtin.cron:
+    name: "renew Kibana certificates"
+    special_time: "hourly"
+    # Rekey needs to happen against the CA, RA's don't support rekey
+    # https://smallstep.com/docs/step-ca/registration-authority-ra-mode/#stepcas-limitations
+    # We don't need to reload/restart Kibana as it will reload the certs on it's own
+    job: >-
+      step ca rekey /etc/kibana/certs/kibana-http.crt
+      /etc/kibana/certs/kibana-http.crt.key
+      --ca-url https://step-ca.us-homelab1.hl.rmb938.me
+      --root /usr/local/share/ca-certificates/smallstep-homelab-prod.crt
+      --force --expires-in 720h
+    state: present
+
 - name: Copy Elastic HTTP CA
   ansible.builtin.copy:
     remote_src: true
@@ -73,10 +108,5 @@
     name: kibana
     state: restarted
   when: kibana_node_options_config.changed or kibana_config.changed
-
-- name: Tailscale Proxy Kibana
-  ansible.builtin.command:
-    cmd: "/usr/bin/tailscale serve --bg http://127.0.0.1:5601"
-  changed_when: false
 
 # TODO: enroll kibana /usr/share/kibana/bin/kibana-setup -t <token>
