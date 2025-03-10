@@ -81,15 +81,6 @@
       --force --expires-in 720h
     state: present
 
-- name: Copy Elastic HTTP CA
-  ansible.builtin.copy:
-    remote_src: true
-    src: /etc/elasticsearch/certs/http_ca.crt
-    dest: /etc/kibana/certs/http_ca.crt
-    owner: root
-    group: kibana
-    mode: "0660"
-
 - name: Configure Kibana
   ansible.builtin.template:
     src: etc/kibana/kibana.yml

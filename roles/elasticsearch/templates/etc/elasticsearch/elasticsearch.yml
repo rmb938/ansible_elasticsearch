@@ -98,6 +98,8 @@ xpack.security.http.ssl:
 xpack.security.transport.ssl:
   enabled: true
   verification_mode: certificate
+  # /usr/share/elasticsearch/bin/elasticsearch-certutil ca --out /etc/elasticsearch/certs/ca.p12
+  # /usr/share/elasticsearch/bin/elasticsearch-certutil cert --out /etc/elasticsearch/certs/transport.p12 --ca /etc/elasticsearch/certs/ca.p12
   keystore.path: certs/transport.p12
   truststore.path: certs/transport.p12
 # Create a new cluster with the current node only

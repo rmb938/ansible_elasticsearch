@@ -60,6 +60,14 @@
     name: elasticsearch
     state: present
 
+- name: Create certificates directory
+  ansible.builtin.file:
+    path: /etc/elasticsearch/certs/
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0755"
+    state: directory
+
 - name: Create Elastic Certificates
   ansible.builtin.command: >-
     step ca certificate {{ ansible_fqdn }}
