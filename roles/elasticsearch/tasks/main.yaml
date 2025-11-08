@@ -232,6 +232,8 @@
                 "name": "fluent-bit-logs",
                 "rollover_alias": "fluent-bit-logs"
               },
+              "mode": "logsdb",
+              "codec": "best_compression",
               "mapping": {
                 "total_fields": {
                   "limit": "2000"
